@@ -1,0 +1,32 @@
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[project]
+name = "agent-core"
+version = "0.1.0"
+description = "Shared framework for all agents: runtime, skills, connections, LLM, deploy conventions."
+requires-python = ">=3.11"
+dependencies = [
+    "pydantic>=2",
+    "pydantic-settings>=2",
+    "fastapi>=0.110",
+    "uvicorn>=0.29",
+]
+
+[project.optional-dependencies]
+# The optional LLM brain
+anthropic = ["anthropic>=0.40"]
+# Modular connectors — an agent installs only what it needs
+jira = ["jira>=3.8"]
+github = ["PyGithub>=2"]
+slack = ["slack_sdk>=3"]
+k8s = ["kubernetes>=29"]
+# Dev tooling
+dev = ["pytest>=8", "ruff>=0.5"]
+
+[tool.hatch.build.targets.wheel]
+packages = ["src/agent_core"]
+
+[tool.ruff]
+line-length = 100
