@@ -10,7 +10,7 @@ from .http import HttpConnection
 
 http = HttpConnection()
 
-__all__ = ["Connection", "LazyConnector", "HttpConnection", "http"]
+__all__ = ["Connection", "HttpConnection", "LazyConnector", "http"]
 
 
 def __getattr__(name: str):

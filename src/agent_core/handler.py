@@ -14,5 +14,5 @@ if TYPE_CHECKING:
 class Handler:
     """Override ``handle`` with the agent's behavior."""
 
-    def handle(self, ctx: "RunContext"):
+    def handle(self, ctx: RunContext):
         raise NotImplementedError("Define handle() in your custom/handler.py")

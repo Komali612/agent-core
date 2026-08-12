@@ -20,10 +20,10 @@ if TYPE_CHECKING:
 class Agent:
     name: str
     prompt: str
-    skills: list["Skill"] = field(default_factory=list)   # markdown docs
-    tools: list["Tool"] = field(default_factory=list)      # code capabilities
-    handler: "Handler | None" = None                        # optional custom orchestration
+    skills: list[Skill] = field(default_factory=list)   # markdown docs
+    tools: list[Tool] = field(default_factory=list)      # code capabilities
+    handler: Handler | None = None                        # optional custom orchestration
     model: str | None = None                                # LLM model id, or None for the no-op brain
 
-    def tool_map(self) -> dict[str, "Tool"]:
+    def tool_map(self) -> dict[str, Tool]:
         return {t.name: t for t in self.tools}

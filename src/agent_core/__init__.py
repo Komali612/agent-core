@@ -13,4 +13,4 @@ from .skills import Skill, load_skills
 from .tools import Tool
 
 __version__ = "0.2.0"
-__all__ = ["Agent", "Handler", "Skill", "Tool", "load_skills", "runtime", "__version__"]
+__all__ = ["Agent", "Handler", "Skill", "Tool", "__version__", "load_skills", "runtime"]
