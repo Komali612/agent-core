@@ -1,14 +1,18 @@
-"""Default Claude-backed provider. Requires ``agent-core[anthropic]``.
+"""Default Claude-backed provider — a real Anthropic Messages API tool-use turn.
 
-Kept import-light: the anthropic SDK is imported lazily so agent_core stays
-importable without it. The real Messages API + tool-use loop is left as a TODO
-for the implementation phase (consult the claude-api reference when wiring it).
+Requires ``agent-core[anthropic]``. The SDK is imported lazily so ``import
+agent_core`` works without it. Each ``respond()`` is one turn of the loop the
+brain runs: send system + history + tool schemas, get back either tool calls or
+a final answer.
 """
 from __future__ import annotations
 
-from typing import Any
+from .base import Reply, ToolCall
 
-DEFAULT_MODEL = "claude-sonnet-5"
+# Default per the Anthropic guidance: use the most capable model unless the
+# agent's config pins a different one (settings.model / AGENT_MODEL).
+DEFAULT_MODEL = "claude-opus-5"
+MAX_TOKENS = 16000
 
 
 class AnthropicProvider:
@@ -28,9 +32,25 @@ class AnthropicProvider:
             )
         return self._client
 
-    def complete(self, prompt: str, **kwargs: Any) -> str:
-        # TODO(impl): call the Messages API via self._client_lazy()
-        raise NotImplementedError("wire up the Anthropic Messages API here")
-
-    def summarize(self, content: Any, **kwargs: Any) -> str:
-        return self.complete(f"Summarize:\n{content}")
+    def respond(self, system: str, messages: list, tools: list) -> Reply:
+        resp = self._client_lazy().messages.create(
+            model=self.model,
+            max_tokens=MAX_TOKENS,
+            system=system,
+            tools=tools,
+            messages=messages,
+        )
+        # tool_use blocks -> ToolCalls the brain will execute; text blocks -> answer.
+        tool_calls = [
+            ToolCall(id=b.id, name=b.name, input=b.input)
+            for b in resp.content
+            if b.type == "tool_use"
+        ]
+        text = "".join(b.text for b in resp.content if b.type == "text")
+        # Append resp.content verbatim (preserves tool_use / thinking blocks).
+        return Reply(
+            content=resp.content,
+            stop_reason=resp.stop_reason,
+            text=text,
+            tool_calls=tool_calls,
+        )

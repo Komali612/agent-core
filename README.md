@@ -9,15 +9,17 @@ every agent identical.
 
 | Module | Role |
 |---|---|
-| `agent.py` | the `Agent` assembly object |
+| `agent.py` | the `Agent` assembly object (prompt + skills + tools) |
+| `tools.py` | the `Tool` base class — *code* the LLM can call |
+| `skills.py` | loads *markdown* skill docs into the system prompt |
+| `brain.py` | the LLM tool-use loop (model orchestrates the tools) |
 | `runtime.py` | starts the HTTP service (every agent is a server) |
 | `service.py` | FastAPI factory + health/metrics endpoints |
 | `intake.py` | request acceptance (validate incoming events) |
-| `manager.py` | orchestrates a single run |
+| `manager.py` | orchestrates a run (brain loop, or a custom handler) |
 | `monitoring.py` | metrics / health (the "line graphs") |
-| `skills/` | the `Skill` base class |
 | `connections/` | connectors — `http` ships in core; `jira`/`slack`/`github`/`k8s` are extras |
-| `llm/` | optional brain (Claude by default, keyless NoOp for local runs) |
+| `llm/` | the model client (Claude tool-use; keyless NoOp for local runs) |
 | `messaging.py` + `contracts/` | dormant seam for future agent-to-agent comms |
 
 ## Develop

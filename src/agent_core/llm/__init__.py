@@ -1,10 +1,10 @@
 """Factory: pick a provider from a model id. ``None`` -> keyless NoOp."""
 from __future__ import annotations
 
-from .base import LLMProvider
+from .base import LLMProvider, Reply, ToolCall
 from .noop import NoOpProvider
 
-__all__ = ["LLMProvider", "NoOpProvider", "get_llm"]
+__all__ = ["LLMProvider", "Reply", "ToolCall", "NoOpProvider", "get_llm"]
 
 
 def get_llm(model: str | None):
