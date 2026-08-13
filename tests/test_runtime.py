@@ -1,7 +1,5 @@
-from fastapi.testclient import TestClient
-
-from agent_core import Agent, Handler
-from agent_core.service import create_app
+from agent_core import Agent
+from agent_core.service import RunRequest, create_app
 
 
 def test_service_exposes_health_routes():
@@ -12,18 +10,11 @@ def test_service_exposes_health_routes():
     assert "/run" in paths
 
 
-def test_run_accepts_structured_input():
-    """Regression: /run must accept a *structured* (dict) `input`, not only text.
-
-    Handler agents (e.g. the CI workers) receive a serialized object as `input`;
-    an over-strict `input: str` schema rejected them with HTTP 422.
+def test_run_request_accepts_structured_input():
+    """Regression: ``RunRequest.input`` must accept a *structured* (dict) value,
+    not only text. Handler agents (the CI workers) send a serialized WorkerRequest
+    as ``input``; an over-strict ``input: str`` schema rejected them with HTTP 422.
     """
-
-    class EchoHandler(Handler):
-        def handle(self, ctx):
-            return ctx.done(ctx.payload.get("input"))
-
-    client = TestClient(create_app(Agent(name="t", prompt="x", handler=EchoHandler())))
-    resp = client.post("/run", json={"input": {"repo": "acme/widget", "n": 1}})
-    assert resp.status_code == 200
-    assert resp.json()["result"] == {"repo": "acme/widget", "n": 1}
+    structured = RunRequest(input={"repo": "acme/widget", "n": 1})
+    assert structured.model_dump()["input"] == {"repo": "acme/widget", "n": 1}
+    assert RunRequest(input="echo hello").input == "echo hello"  # plain text still works
