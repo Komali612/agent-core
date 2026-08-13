@@ -1,42 +1,80 @@
 """FastAPI app for every agent: health/metrics, the /run endpoint, and a small
 built-in **test console** at ``/`` so any agent is testable in a browser.
 
+FastAPI gives every agent an OpenAPI (Swagger) spec **for free**:
+  - Swagger UI   -> GET /docs
+  - ReDoc        -> GET /redoc
+  - OpenAPI JSON -> GET /openapi.json
+
+The ``/run`` endpoint is typed with pydantic models below, so those docs show the
+real request/response schema (not just an opaque body).
+
 Heavy deps (fastapi/uvicorn) are imported lazily so ``import agent_core`` works
 without them; they're only needed when an agent actually serves.
 """
 from __future__ import annotations
+
+from typing import Any
+
+from pydantic import BaseModel, ConfigDict
 
 from . import monitoring
 from .intake import Intake
 from .manager import RunManager
 
 
+class RunRequest(BaseModel):
+    """Body for ``POST /run``.
+
+    ``input`` is the request text the agent works from; any extra fields (e.g.
+    ``repo_url``) are allowed and passed straight through to the agent.
+    """
+
+    model_config = ConfigDict(
+        extra="allow",
+        json_schema_extra={"examples": [{"input": "echo hello"}]},
+    )
+    input: str | None = None
+
+
+class RunResponse(BaseModel):
+    agent: str
+    result: Any = None
+
+
 def create_app(agent):
-    from fastapi import Body, FastAPI
+    from fastapi import FastAPI
     from fastapi.responses import HTMLResponse
 
-    app = FastAPI(title=agent.name)
+    app = FastAPI(
+        title=f"{agent.name} agent",
+        version="0.2.0",
+        description=(
+            f"**{agent.name}** — an agent built on agent-core.\n\n"
+            "`POST /run` to invoke it. Interactive docs: `/docs` (Swagger) · `/redoc`."
+        ),
+    )
     manager = RunManager(agent)
     intake = Intake()
 
-    @app.get("/healthz")
+    @app.get("/healthz", tags=["ops"], summary="Liveness probe")
     def healthz():
         return monitoring.healthz()
 
-    @app.get("/readyz")
+    @app.get("/readyz", tags=["ops"], summary="Readiness probe")
     def readyz():
         return {"status": "ready", "agent": agent.name}
 
-    @app.get("/metrics")
+    @app.get("/metrics", tags=["ops"], summary="Run counters")
     def metrics():
         return monitoring.metrics()
 
-    @app.post("/run")
-    def run(payload: dict = Body(..., examples=[{"input": "echo hello"}])):
-        # Arbitrary JSON body (input, plus any extra keys like repo_url).
-        return manager.run_once(intake.accept(payload))
+    @app.post("/run", response_model=RunResponse, tags=["agent"], summary="Invoke the agent")
+    def run(req: RunRequest) -> RunResponse:
+        # req.model_dump() -> {"input": ..., **extra}. intake validates it.
+        return manager.run_once(intake.accept(req.model_dump()))
 
-    @app.get("/", response_class=HTMLResponse)
+    @app.get("/", response_class=HTMLResponse, include_in_schema=False)
     def console():
         return _CONSOLE_HTML.replace("__AGENT__", agent.name)
 
