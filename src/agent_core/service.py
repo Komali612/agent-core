@@ -26,15 +26,16 @@ from .manager import RunManager
 class RunRequest(BaseModel):
     """Body for ``POST /run``.
 
-    ``input`` is the request text the agent works from; any extra fields (e.g.
-    ``repo_url``) are allowed and passed straight through to the agent.
+    ``input`` is what the agent works from — free text for an LLM/brain agent, or a
+    structured object for a handler agent (e.g. a serialized ``WorkerRequest``). Any
+    extra top-level fields are allowed and passed straight through to the agent.
     """
 
     model_config = ConfigDict(
         extra="allow",
         json_schema_extra={"examples": [{"input": "echo hello"}]},
     )
-    input: str | None = None
+    input: Any = None
 
 
 class RunResponse(BaseModel):
