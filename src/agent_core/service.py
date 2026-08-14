@@ -77,7 +77,8 @@ def create_app(agent):
 
     @app.get("/", response_class=HTMLResponse, include_in_schema=False)
     def console():
-        return _CONSOLE_HTML.replace("__AGENT__", agent.name)
+        # An agent may ship its own console (e.g. a repo-URL form); else the default.
+        return agent.console_html or _CONSOLE_HTML.replace("__AGENT__", agent.name)
 
     return app
 

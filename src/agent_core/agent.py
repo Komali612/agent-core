@@ -24,6 +24,7 @@ class Agent:
     tools: list[Tool] = field(default_factory=list)      # code capabilities
     handler: Handler | None = None                        # optional custom orchestration
     model: str | None = None                                # LLM model id, or None for the no-op brain
+    console_html: str | None = None                         # custom HTML for GET / (overrides the default console)
 
     def tool_map(self) -> dict[str, Tool]:
         return {t.name: t for t in self.tools}
